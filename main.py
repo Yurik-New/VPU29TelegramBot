@@ -1,28 +1,21 @@
-import os
 import logging
+import inspect
 
-from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
-from dotenv import load_dotenv
+from telegram.ext import ApplicationBuilder
 
-load_dotenv()  # take environment variables from .env.
-
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+from config.config import TELEGRAM_TOKEN
+import handlers
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
-
-
 if __name__ == '__main__':
-    application = ApplicationBuilder().token('TELEGRAM_TOKEN').build()
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-    start_handler = CommandHandler('start', start)
-    application.add_handler(start_handler)
+    for name, obj in inspect.getmembers(handlers):
+        if inspect.isclass(obj) and issubclass(obj, handlers.BaseHandler):
+            obj.register(app)
 
-    application.run_polling()
+    app.run_polling()
